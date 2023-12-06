@@ -434,10 +434,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                 val progress = if (isStopped && loadedTask!!.resumable) lastProgress else 100
                 val status =
                     if (isStopped) if (loadedTask!!.resumable) DownloadStatus.PAUSED else DownloadStatus.CANCELED else DownloadStatus.COMPLETE
-                val storage: Int = ContextCompat.checkSelfPermission(
-                    applicationContext,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
+//                val storage: Int = ContextCompat.checkSelfPermission(
+//                    applicationContext,
+//                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+//                )
                 var pendingIntent: PendingIntent? = null
 //                if (status == DownloadStatus.COMPLETE) {
 //                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
