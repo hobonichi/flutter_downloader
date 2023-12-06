@@ -172,7 +172,7 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
         val requiresStorageNotLow: Boolean = call.requireArgument("requires_storage_not_low")
         val saveInPublicStorage: Boolean = call.requireArgument("save_in_public_storage")
         val allowCellular: Boolean = call.requireArgument("allow_cellular")
-        val notificationTitle: String = call.argument("notification_title")
+        val notificationTitle: String? = call.requireArgument("notification_title")
         val request: WorkRequest = buildRequest(
             url,
             savedDir,
@@ -325,12 +325,22 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
         val task = taskDao!!.loadTask(taskId)
         val requiresStorageNotLow: Boolean = call.requireArgument("requires_storage_not_low")
         var timeout: Int = call.requireArgument("timeout")
+        val notificationTitle: String? = call.requireArgument("notification_title")
         if (task != null) {
             if (task.status == DownloadStatus.FAILED || task.status == DownloadStatus.CANCELED) {
                 val request: WorkRequest = buildRequest(
-                    task.url, task.savedDir, task.filename,
-                    task.headers, task.showNotification, task.openFileFromNotification,
-                    false, requiresStorageNotLow, task.saveInPublicStorage, timeout, allowCellular = task.allowCellular
+                    task.url,
+                    task.savedDir,
+                    task.filename,
+                    task.headers,
+                    task.showNotification,
+                    task.openFileFromNotification,
+                    false,
+                    requiresStorageNotLow,
+                    task.saveInPublicStorage,
+                    timeout,
+                    allowCellular = task.allowCellular,
+                    notificationTitle = notificationTitle
                 )
                 val newTaskId: String = request.id.toString()
                 result.success(newTaskId)
