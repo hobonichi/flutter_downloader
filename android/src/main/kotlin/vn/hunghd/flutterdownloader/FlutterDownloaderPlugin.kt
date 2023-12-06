@@ -92,7 +92,8 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
         requiresStorageNotLow: Boolean,
         saveInPublicStorage: Boolean,
         timeout: Int,
-        allowCellular: Boolean
+        allowCellular: Boolean,
+        notificationTitle: String?
     ): WorkRequest {
         return OneTimeWorkRequest.Builder(DownloadWorker::class.java)
             .setConstraints(
@@ -124,6 +125,7 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
                         saveInPublicStorage
                     )
                     .putInt(DownloadWorker.ARG_TIMEOUT, timeout)
+                    .putString(DownloadWorker.ARG_NOTIFICATION_TITLE, notificationTitle)
                     .build()
             )
             .build()
@@ -170,6 +172,7 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
         val requiresStorageNotLow: Boolean = call.requireArgument("requires_storage_not_low")
         val saveInPublicStorage: Boolean = call.requireArgument("save_in_public_storage")
         val allowCellular: Boolean = call.requireArgument("allow_cellular")
+        val notificationTitle: String = call.argument("notification_title")
         val request: WorkRequest = buildRequest(
             url,
             savedDir,
@@ -181,7 +184,8 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
             requiresStorageNotLow,
             saveInPublicStorage,
             timeout,
-            allowCellular = allowCellular
+            allowCellular = allowCellular,
+            notificationTitle = notificationTitle
         )
         WorkManager.getInstance(requireContext()).enqueue(request)
         val taskId: String = request.id.toString()
@@ -198,7 +202,8 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
             showNotification,
             openFileFromNotification,
             saveInPublicStorage,
-            allowCellular = allowCellular
+            allowCellular = allowCellular,
+            notificationTitle = notificationTitle
         )
     }
 
@@ -285,7 +290,8 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
                         requiresStorageNotLow,
                         task.saveInPublicStorage,
                         timeout,
-                        allowCellular = task.allowCellular
+                        allowCellular = task.allowCellular,
+                        notificationTitle = task.notificationTitle
                     )
                     val newTaskId: String = request.id.toString()
                     result.success(newTaskId)

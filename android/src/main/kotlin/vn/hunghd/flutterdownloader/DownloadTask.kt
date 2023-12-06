@@ -15,5 +15,6 @@ data class DownloadTask(
     var openFileFromNotification: Boolean,
     var timeCreated: Long,
     var saveInPublicStorage: Boolean,
-    var allowCellular: Boolean
+    var allowCellular: Boolean,
+    var notificationTitle : String?
 )

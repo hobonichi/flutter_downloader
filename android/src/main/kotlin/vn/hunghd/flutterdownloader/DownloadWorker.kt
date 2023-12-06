@@ -137,9 +137,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         taskDao = TaskDao(dbHelper!!)
         val url: String? = inputData.getString(ARG_URL)
         val filename: String? = inputData.getString(ARG_FILE_NAME)
+        val notificationTitle: String? = inputData.getString(ARG_NOTIFICATION_TITLE)
         val task = taskDao?.loadTask(id.toString())
         if (task != null && task.status == DownloadStatus.ENQUEUED) {
-            updateNotification(context, filename ?: url, DownloadStatus.CANCELED, -1, null, true)
+            updateNotification(context, filename ?: url, DownloadStatus.CANCELED, -1, null, true, notificationTitle)
             taskDao?.updateTask(id.toString(), DownloadStatus.CANCELED, lastProgress)
         }
     }
@@ -156,7 +157,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         val headers: String = inputData.getString(ARG_HEADERS)
             ?: throw IllegalArgumentException("Argument '$ARG_HEADERS' should not be null")
         var isResume: Boolean = inputData.getBoolean(ARG_IS_RESUME, false)
-        val timeout: Int = inputData.getInt(ARG_TIMEOUT, 15000)
+        val timeout: Int = inputData.getInt(ARG_TIMEOUT, 45000)
         debug = inputData.getBoolean(ARG_DEBUG, false)
         step = inputData.getInt(ARG_STEP, 10)
         ignoreSsl = inputData.getBoolean(ARG_IGNORESSL, false)
@@ -183,6 +184,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         clickToOpenDownloadedFile =
             inputData.getBoolean(ARG_OPEN_FILE_FROM_NOTIFICATION, false)
         saveInPublicStorage = inputData.getBoolean(ARG_SAVE_IN_PUBLIC_STORAGE, false)
+        val notificationTitle = inputData.getString(ARG_NOTIFICATION_TITLE)
         primaryId = task.primaryId
         setupNotification(applicationContext)
         updateNotification(
@@ -191,7 +193,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
             DownloadStatus.RUNNING,
             task.progress,
             null,
-            false
+            false,
+            notificationTitle = notificationTitle
         )
         taskDao?.updateTask(id.toString(), DownloadStatus.RUNNING, task.progress)
 
@@ -203,13 +206,13 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
             log("exists file for " + filename + "automatic resuming...")
         }
         return try {
-            downloadFile(applicationContext, url, savedDir, filename, headers, isResume, timeout)
+            downloadFile(applicationContext, url, savedDir, filename, headers, isResume, timeout,notificationTitle = notificationTitle)
             cleanUp()
             dbHelper = null
             taskDao = null
             Result.success()
         } catch (e: Exception) {
-            updateNotification(applicationContext, filename ?: url, DownloadStatus.FAILED, -1, null, true)
+            updateNotification(applicationContext, filename ?: url, DownloadStatus.FAILED, -1, null, true, notificationTitle = notificationTitle)
             taskDao?.updateTask(id.toString(), DownloadStatus.FAILED, lastProgress)
             e.printStackTrace()
             dbHelper = null
@@ -257,7 +260,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         filename: String?,
         headers: String,
         isResume: Boolean,
-        timeout: Int
+        timeout: Int,
+        notificationTitle: String?
     ) {
         var actualFilename = filename
         var url = fileURL
@@ -418,7 +422,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                             DownloadStatus.RUNNING,
                             progress,
                             null,
-                            false
+                            false,
+                            notificationTitle = notificationTitle
                         )
                     }
                 }
@@ -460,19 +465,43 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                     }
                 }
                 taskDao!!.updateTask(id.toString(), status, progress)
-                updateNotification(context, actualFilename, status, progress, pendingIntent, true)
+                updateNotification(
+                    context,
+                    actualFilename,
+                    status,
+                    progress,
+                    pendingIntent,
+                    true,
+                    notificationTitle = notificationTitle
+                )
                 log(if (isStopped) "Download canceled" else "File downloaded")
             } else {
                 val loadedTask = taskDao!!.loadTask(id.toString())
                 val status =
                     if (isStopped) if (loadedTask!!.resumable) DownloadStatus.PAUSED else DownloadStatus.CANCELED else DownloadStatus.FAILED
                 taskDao!!.updateTask(id.toString(), status, lastProgress)
-                updateNotification(context, actualFilename ?: fileURL, status, -1, null, true)
+                updateNotification(
+                    context,
+                    actualFilename ?: fileURL,
+                    status,
+                    -1,
+                    null,
+                    true,
+                    notificationTitle = notificationTitle
+                )
                 log(if (isStopped) "Download canceled" else "Server replied HTTP code: $responseCode")
             }
         } catch (e: IOException) {
             taskDao!!.updateTask(id.toString(), DownloadStatus.FAILED, lastProgress)
-            updateNotification(context, actualFilename ?: fileURL, DownloadStatus.FAILED, -1, null, true)
+            updateNotification(
+                context,
+                actualFilename ?: fileURL,
+                DownloadStatus.FAILED,
+                -1,
+                null,
+                true,
+                notificationTitle = notificationTitle
+            )
             e.printStackTrace()
         } finally {
             if (outputStream != null) {
@@ -624,14 +653,16 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         status: DownloadStatus,
         progress: Int,
         intent: PendingIntent?,
-        finalize: Boolean
+        finalize: Boolean,
+        notificationTitle: String?
     ) {
         sendUpdateProcessEvent(status, progress)
 
         // Show the notification
         if (showNotification) {
             // Create the notification
-            val builder = NotificationCompat.Builder(context, CHANNEL_ID).setContentTitle(title)
+            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(notificationTitle ?: title)
                 .setContentIntent(intent)
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(true)
@@ -842,6 +873,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         const val ARG_STEP = "step"
         const val ARG_SAVE_IN_PUBLIC_STORAGE = "save_in_public_storage"
         const val ARG_IGNORESSL = "ignoreSsl"
+        const val ARG_NOTIFICATION_TITLE = "notification_title"
         private val TAG = DownloadWorker::class.java.simpleName
         private const val BUFFER_SIZE = 4096
         private const val CHANNEL_ID = "FLUTTER_DOWNLOADER_NOTIFICATION"

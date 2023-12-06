@@ -21,7 +21,8 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION,
         TaskEntry.COLUMN_NAME_TIME_CREATED,
         TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE,
-        TaskEntry.COLUMN_ALLOW_CELLULAR
+        TaskEntry.COLUMN_ALLOW_CELLULAR,
+        TaskEntry.COLUMN_NAME_NOTIFICATION_TITLE
     )
 
     fun insertOrUpdateNewTask(
@@ -35,7 +36,8 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         showNotification: Boolean,
         openFileFromNotification: Boolean,
         saveInPublicStorage: Boolean,
-        allowCellular: Boolean
+        allowCellular: Boolean,
+        notificationTitle: String?
     ) {
         val db = dbHelper.writableDatabase
         val values = ContentValues()
@@ -56,6 +58,7 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         values.put(TaskEntry.COLUMN_NAME_TIME_CREATED, System.currentTimeMillis())
         values.put(TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE, if (saveInPublicStorage) 1 else 0)
         values.put(TaskEntry.COLUMN_ALLOW_CELLULAR, if (allowCellular) 1 else 0)
+        values.put(TaskEntry.COLUMN_NAME_NOTIFICATION_TITLE, notificationTitle)
         db.beginTransaction()
         try {
             db.insertWithOnConflict(
@@ -247,6 +250,8 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val timeCreated = cursor.getLong(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_TIME_CREATED))
         val saveInPublicStorage = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE)).toInt()
         val allowCelluar = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_ALLOW_CELLULAR)).toInt()
+        val notificationTitle =
+            cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_NOTIFICATION_TITLE))
         return DownloadTask(
             primaryId,
             taskId,
@@ -262,7 +267,8 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
             clickToOpenDownloadedFile == 1,
             timeCreated,
             saveInPublicStorage == 1,
-            allowCellular = allowCelluar == 1
+            allowCellular = allowCelluar == 1,
+            notificationTitle = notificationTitle
         )
     }
 }

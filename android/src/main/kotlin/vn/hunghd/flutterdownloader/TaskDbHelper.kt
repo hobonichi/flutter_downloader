@@ -16,6 +16,7 @@ class TaskDbHelper private constructor(context: Context) :
             db.execSQL("ALTER TABLE ${TaskEntry.TABLE_NAME} ADD COLUMN ${TaskEntry.COLUMN_ALLOW_CELLULAR} TINYINT DEFAULT 1")
         } else if (oldVersion == 2 && newVersion == 3) {
             db.execSQL("ALTER TABLE " + TaskEntry.TABLE_NAME + " ADD COLUMN " + TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE + " TINYINT DEFAULT 0")
+            db.execSQL("ALTER TABLE " + TaskEntry.TABLE_NAME + " ADD COLUMN " + TaskEntry.COLUMN_NAME_NOTIFICATION_TITLE + " TEXT ")
         } else {
             db.execSQL(SQL_DELETE_ENTRIES)
             onCreate(db)
@@ -44,6 +45,7 @@ class TaskDbHelper private constructor(context: Context) :
                 TaskEntry.COLUMN_NAME_RESUMABLE + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION + " TINYINT DEFAULT 0, " +
+                TaskEntry.COLUMN_NAME_NOTIFICATION_TITLE + " TEXT, " +
                 TaskEntry.COLUMN_NAME_TIME_CREATED + " INTEGER DEFAULT 0, " +
                 TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_ALLOW_CELLULAR + " TINYINT DEFAULT 1" +
