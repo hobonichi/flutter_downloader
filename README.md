@@ -460,3 +460,13 @@ Pull request are also very welcome!
 [android_9_cleartext_traffic]: https://medium.com/@son.rommer/fix-cleartext-traffic-error-in-android-9-pie-2f4e9e2235e6
 [3]: https://medium.com/@guerrix/info-plist-localization-ad5daaea732a
 [4]: https://developer.android.com/training/basics/supporting-devices/languages
+
+### Changelog From Hobonichi
+2023-12-18
+* sync changed from [old repository](https://github.com/abeyshiferaw0/flutter_downloader)
+    * add custom notification_title
+    * change download timeout from 15s to 45s
+    * set download path the same in all version of Android
+    * disable click notification to open
+* fix database conflict when merge changes from old repository and origin repository v1.11.5
+    * add column and change migration
