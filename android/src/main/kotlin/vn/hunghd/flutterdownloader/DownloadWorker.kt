@@ -390,15 +390,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                     // From Android 11 onwards, file is only downloaded to app-specific directory (internal storage)
                     // or public shared download directory (external storage).
                     // The second option will ignore `savedDir` parameter.
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && saveInPublicStorage) {
-                        val uri = createFileInPublicDownloadsDir(actualFilename, contentType)
-                        savedFilePath = getMediaStoreEntryPathApi29(uri!!)
-                        outputStream = context.contentResolver.openOutputStream(uri, "w")
-                    } else {
-                        val file = createFileInAppSpecificDir(actualFilename!!, savedDir)
-                        savedFilePath = file!!.path
-                        outputStream = FileOutputStream(file, false)
-                    }
+                    val file = createFileInAppSpecificDir(actualFilename!!, savedDir)
+                    savedFilePath = file!!.path
+                    outputStream = FileOutputStream(file, false)
                 }
                 var count = downloadedBytes
                 var bytesRead: Int
@@ -505,19 +499,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
      * Create a file using java.io API
      */
     private fun createFileInAppSpecificDir(filename: String, savedDir: String): File? {
-        val newFile = File(savedDir, filename)
-        try {
-            val rs: Boolean = newFile.createNewFile()
-            if (rs) {
-                return newFile
-            } else {
-                logError("It looks like you are trying to save file in public storage but not setting 'saveInPublicStorage' to 'true'")
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-            logError("Create a file using java.io API failed ")
-        }
-        return null
+        return File(savedDir, filename)
     }
 
     /**
